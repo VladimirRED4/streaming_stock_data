@@ -3,4 +3,26 @@ name = "streaming_stock_data"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "quote_common"
+path = "src/lib.rs"
+
+[[bin]]
+name = "quote-server"
+path = "src/server/main.rs"
+
+[[bin]]
+name = "quote-client"
+path = "src/client/main.rs"
+
 [dependencies]
+rand = "0.8"
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+clap = { version = "4.0", features = ["derive"] }
+tracing = "0.1"
+thiserror = "1.0"
+crossbeam-channel = "0.5"
+ctrlc = "3.4"
