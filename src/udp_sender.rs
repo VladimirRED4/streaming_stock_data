@@ -2,68 +2,124 @@ use crate::models::{ClientConfig, StockQuote};
 use crossbeam_channel::Receiver;
 use std::net::UdpSocket;
 use std::thread;
+use log::{info, error, debug, trace};
 
 pub struct UdpSender {
     client_id: String,
     config: ClientConfig,
-    quote_receiver: Receiver<StockQuote>,
+    quote_receivers: Vec<Receiver<StockQuote>>,
 }
 
 impl UdpSender {
     pub fn new(
         client_id: String,
         config: ClientConfig,
-        quote_receiver: Receiver<StockQuote>,
+        quote_receivers: Vec<Receiver<StockQuote>>,
     ) -> Self {
+        debug!("Creating UDP sender for client: {}", client_id);
         UdpSender {
             client_id,
             config,
-            quote_receiver,
+            quote_receivers,
         }
     }
 
     pub fn start(self) {
-        println!("[INFO] Starting UDP sender for client {}", self.client_id);
+        info!("Starting UDP sender for client {} to {}",
+              self.client_id, self.config.udp_addr);
+        info!("Subscribed to {} tickers: {:?}",
+              self.quote_receivers.len(), self.config.tickers);
 
-        // Парсим UDP адрес
         let target_addr = match self.parse_udp_addr(&self.config.udp_addr) {
-            Ok(addr) => addr,
+            Ok(addr) => {
+                debug!("Parsed UDP address for {}: {}", self.client_id, addr);
+                addr
+            }
             Err(e) => {
-                eprintln!("[ERROR] Failed to parse UDP address for {}: {}", self.client_id, e);
+                error!("Failed to parse UDP address for {}: {}", self.client_id, e);
                 return;
             }
         };
 
-        // Создаем UDP сокет для отправки
-        let udp_socket = match UdpSocket::bind("0.0.0.0:0") {
-            Ok(socket) => socket,
+        let udp_socket = match UdpSocket::bind("127.0.0.1:0") {
+            Ok(socket) => {
+                debug!("UDP socket created for client {}", self.client_id);
+                socket
+            }
             Err(e) => {
-                eprintln!("[ERROR] Failed to create UDP socket for {}: {}", self.client_id, e);
+                error!("Failed to create UDP socket for {}: {}", self.client_id, e);
                 return;
             }
         };
-
-        // Конвертируем tickers в HashSet для быстрой проверки
-        let target_tickers: std::collections::HashSet<String> =
-            self.config.tickers.iter().cloned().collect();
 
         thread::spawn(move || {
-            for quote in self.quote_receiver.iter() {
-                // Фильтруем по запрошенным тикерам
-                if target_tickers.contains(&quote.ticker) {
-                    if let Err(e) = udp_socket.send_to(&quote.to_bytes(), &target_addr) {
-                        eprintln!("[ERROR] Failed to send quote to {}: {}", self.client_id, e);
-                        break;
+            let mut sent_count = 0;
+            let mut errors_count = 0;
+
+            info!("UDP sender thread started for client {}", self.client_id);
+
+            // Запускаем отдельный поток для каждого ресивера
+            let mut handles = Vec::new();
+
+            for (i, receiver) in self.quote_receivers.into_iter().enumerate() {
+                let udp_socket = udp_socket.try_clone().expect("Failed to clone UDP socket");
+                let target_addr = target_addr.clone();
+                let client_id = self.client_id.clone();
+
+                let handle = thread::spawn(move || {
+                    let mut thread_sent_count = 0;
+                    let mut thread_errors_count = 0;
+
+                    debug!("Started receiver thread {} for client {}", i, client_id);
+
+                    for quote in receiver.iter() {
+                        let json_data = quote.to_json();
+
+                        if let Err(e) = udp_socket.send_to(json_data.as_bytes(), &target_addr) {
+                            error!("Failed to send quote in thread {} for client {}: {}",
+                                  i, client_id, e);
+                            thread_errors_count += 1;
+
+                            if thread_errors_count > 5 {
+                                break;
+                            }
+                        } else {
+                            thread_sent_count += 1;
+
+                            if thread_sent_count % 50 == 0 {
+                                trace!("Thread {} for client {} sent {} quotes",
+                                      i, client_id, thread_sent_count);
+                            }
+                        }
+                    }
+
+                    (thread_sent_count, thread_errors_count)
+                });
+
+                handles.push(handle);
+            }
+
+            // Ждем завершения всех потоков
+            for (i, handle) in handles.into_iter().enumerate() {
+                match handle.join() {
+                    Ok((thread_sent, thread_errors)) => {
+                        sent_count += thread_sent;
+                        errors_count += thread_errors;
+                        debug!("Receiver thread {} finished: sent={}, errors={}",
+                              i, thread_sent, thread_errors);
+                    }
+                    Err(e) => {
+                        error!("Receiver thread {} panicked: {:?}", i, e);
                     }
                 }
             }
 
-            println!("[INFO] UDP sender for client {} stopped", self.client_id);
+            info!("UDP sender for client {} stopped. Sent {} quotes, errors: {}",
+                  self.client_id, sent_count, errors_count);
         });
     }
 
     fn parse_udp_addr(&self, addr_str: &str) -> Result<String, String> {
-        // Убираем "udp://" префикс
         if let Some(addr) = addr_str.strip_prefix("udp://") {
             Ok(addr.to_string())
         } else {

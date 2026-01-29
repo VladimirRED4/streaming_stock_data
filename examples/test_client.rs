@@ -1,4 +1,3 @@
-// examples/test_client.rs
 use std::net::{TcpStream, UdpSocket};
 use std::io::{Write, Read};
 use std::thread;
@@ -26,6 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Отправляем команду STREAM
     let stream_command = "STREAM udp://127.0.0.1:34255 AAPL,TSLA\n";
+    // let stream_command = "STREAM udp://127.0.0.1:34255 AAPL\n";
     tcp_stream.write_all(stream_command.as_bytes())?;
     println!("Sent: {}", stream_command.trim());
 

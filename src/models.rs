@@ -25,7 +25,7 @@ impl StockQuote {
         }
     }
 
-    // Текстовый формат для UDP
+    // Текстовый формат для обратной совместимости
     pub fn to_string(&self) -> String {
         format!("{}|{:.2}|{}|{}",
             self.ticker,
@@ -35,10 +35,23 @@ impl StockQuote {
         )
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.to_string().into_bytes()
+    // JSON формат (основной)
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap_or_else(|_| {
+            // Fallback на текстовый формат при ошибке сериализации
+            self.to_string()
+        })
     }
 
+    // Байтовое представление (использует JSON)
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.to_json().into_bytes()
+    }
+
+    // Парсинг из JSON
+    pub fn from_json(json_str: &str) -> Option<Self> {
+        serde_json::from_str(json_str).ok()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -87,15 +100,15 @@ pub enum Command {
 
 #[derive(Error, Debug)]
 pub enum CommandError {
-    #[error("Invalid command format: {0}")]
+    #[error("ERR Invalid command format: {0}")]
     InvalidFormat(String),
-    #[error("Invalid UDP address: {0}")]
+    #[error("ERR Invalid UDP address: {0}")]
     InvalidAddress(String),
-    #[error("No tickers specified")]
+    #[error("ERR No tickers specified")]
     NoTickers,
-    #[error("Invalid ticker: {0}")]
+    #[error("ERR Invalid ticker: {0}")]
     InvalidTicker(String),
-    #[error("IO error: {0}")]
+    #[error("ERR IO error: {0}")]
     IoError(#[from] std::io::Error),
 }
 
@@ -122,7 +135,7 @@ impl Command {
                     ));
                 }
 
-                // Парсим тикеры
+                // Парсим тикеры - преобразуем в верхний регистр
                 if parts.len() < 3 {
                     return Err(CommandError::NoTickers);
                 }
