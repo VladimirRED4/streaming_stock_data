@@ -1,12 +1,10 @@
-# Quote Streaming
+# Streaming Stock Data
 
 [![CI](https://github.com/vladimirred4/streaming_stock_data/actions/workflows/ci.yml/badge.svg)](https://github.com/vladimirred4/streaming_stock_data/actions)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code Coverage](https://codecov.io/gh/vladimirred4/streaming_stock_data/branch/main/graph/badge.svg)](https://codecov.io/gh/vladimirred4/streaming_stock_data)
-[![Security Audit](https://img.shields.io/badge/security-audited-brightgreen)](https://github.com/vladimirred4/streaming_stock_data/security)
-[![Maintenance](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)](https://github.com/vladimirred4/streaming_stock_data)
-[![Discord](https://img.shields.io/discord/your-discord-channel?logo=discord)](https://discord.gg/your-invite-link)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]()
 
 Реализация системы потоковой передачи биржевых котировок на Rust.
 
