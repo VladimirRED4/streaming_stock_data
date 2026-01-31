@@ -1,4 +1,5 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
 
@@ -25,16 +26,6 @@ impl StockQuote {
         }
     }
 
-    // Текстовый формат для обратной совместимости
-    pub fn to_string(&self) -> String {
-        format!("{}|{:.2}|{}|{}",
-            self.ticker,
-            self.price,
-            self.volume,
-            self.timestamp
-        )
-    }
-
     // JSON формат (основной)
     pub fn to_json(&self) -> String {
         serde_json::to_string(self).unwrap_or_else(|_| {
@@ -51,6 +42,16 @@ impl StockQuote {
     // Парсинг из JSON
     pub fn from_json(json_str: &str) -> Option<Self> {
         serde_json::from_str(json_str).ok()
+    }
+}
+
+impl fmt::Display for StockQuote {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}|{:.2}|{}|{}",
+            self.ticker, self.price, self.volume, self.timestamp
+        )
     }
 }
 
@@ -123,7 +124,7 @@ impl Command {
             "STREAM" => {
                 if parts.len() < 2 {
                     return Err(CommandError::InvalidFormat(
-                        "STREAM requires UDP address and tickers".to_string()
+                        "STREAM requires UDP address and tickers".to_string(),
                     ));
                 }
 
@@ -131,7 +132,7 @@ impl Command {
                 let udp_addr = parts[1].to_string();
                 if !udp_addr.starts_with("udp://") {
                     return Err(CommandError::InvalidAddress(
-                        "Address must start with udp://".to_string()
+                        "Address must start with udp://".to_string(),
                     ));
                 }
 
@@ -155,9 +156,10 @@ impl Command {
             "PING" => Ok(Command::Ping),
             "STOP" => Ok(Command::Stop),
             "HELP" => Ok(Command::Help),
-            _ => Err(CommandError::InvalidFormat(
-                format!("Unknown command: {}", parts[0])
-            )),
+            _ => Err(CommandError::InvalidFormat(format!(
+                "Unknown command: {}",
+                parts[0]
+            ))),
         }
     }
 }

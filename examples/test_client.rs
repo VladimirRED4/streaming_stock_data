@@ -1,5 +1,5 @@
+use std::io::{Read, Write};
 use std::net::{TcpStream, UdpSocket};
-use std::io::{Write, Read};
 use std::thread;
 use std::time::{Duration, SystemTime};
 

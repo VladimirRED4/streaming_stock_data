@@ -1,11 +1,11 @@
 use clap::Parser;
+use log::{debug, error, info, trace, warn};
+use std::io::{Read, Write, stdin};
 use std::net::{TcpStream, UdpSocket};
-use std::io::{Write, Read, stdin};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use log::{info, error, warn, debug, trace};
 
 // Константы для конфигурации
 const DEFAULT_UDP_PORT: u16 = 55555;
@@ -66,8 +66,7 @@ fn setup_logging(level: &str, color: bool) {
     use env_logger::Env;
 
     // Создаем специальное окружение с нужным уровнем логирования
-    let env = Env::default()
-        .filter_or("RUST_LOG", format!("quote_client={}", level));
+    let env = Env::default().filter_or("RUST_LOG", format!("quote_client={}", level));
 
     let mut builder = env_logger::Builder::from_env(env);
 
@@ -102,8 +101,11 @@ fn load_tickers(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>> 
         }
 
         if !tickers.is_empty() {
-            info!("Loaded {} tickers from command line: {}",
-                  tickers.len(), tickers.join(", "));
+            info!(
+                "Loaded {} tickers from command line: {}",
+                tickers.len(),
+                tickers.join(", ")
+            );
             return Ok(tickers);
         }
     }
@@ -123,8 +125,11 @@ fn load_tickers(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>> 
             return Err(format!("ERR No tickers found in file {}", filename).into());
         }
 
-        info!("Loaded {} tickers from file: {}",
-              tickers.len(), tickers.join(", "));
+        info!(
+            "Loaded {} tickers from file: {}",
+            tickers.len(),
+            tickers.join(", ")
+        );
         return Ok(tickers);
     }
 
@@ -133,7 +138,10 @@ fn load_tickers(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>> 
     let content = match std::fs::read_to_string("tickers.txt") {
         Ok(content) => content,
         Err(_) => {
-            return Err("ERR No tickers specified. Use --tickers or --ticker-file or create tickers.txt".into());
+            return Err(
+                "ERR No tickers specified. Use --tickers or --ticker-file or create tickers.txt"
+                    .into(),
+            );
         }
     };
 
@@ -148,8 +156,11 @@ fn load_tickers(args: &Args) -> Result<Vec<String>, Box<dyn std::error::Error>> 
         return Err("ERR No tickers found in tickers.txt".into());
     }
 
-    info!("Loaded {} tickers from default file: {}",
-          tickers.len(), tickers.join(", "));
+    info!(
+        "Loaded {} tickers from default file: {}",
+        tickers.len(),
+        tickers.join(", ")
+    );
     Ok(tickers)
 }
 
@@ -194,31 +205,33 @@ fn format_quote(data: &str, format: &str, show_timestamp: bool) -> String {
                     // Простой формат без chrono
                     let seconds = timestamp / 1000;
                     let millis = timestamp % 1000;
-                    format!("[{}.{:03}] {}: ${:.2} (volume: {})",
-                           seconds, millis, ticker, price, volume)
+                    format!(
+                        "[{}.{:03}] {}: ${:.2} (volume: {})",
+                        seconds, millis, ticker, price, volume
+                    )
                 }
                 Err(_) => {
                     format!("[Parse Error] {}", data)
                 }
             }
         }
-        "line" => {
-            match parse_json_quote(data) {
-                Ok((ticker, price, volume, timestamp)) => {
-                    if show_timestamp {
-                        let seconds = timestamp / 1000;
-                        let millis = timestamp % 1000;
-                        format!("[{}.{:03}] {} ${:.2} ({})",
-                               seconds, millis, ticker, price, volume)
-                    } else {
-                        format!("{} ${:.2} ({})", ticker, price, volume)
-                    }
-                }
-                Err(_) => {
-                    format!("[Parse Error] {}", data)
+        "line" => match parse_json_quote(data) {
+            Ok((ticker, price, volume, timestamp)) => {
+                if show_timestamp {
+                    let seconds = timestamp / 1000;
+                    let millis = timestamp % 1000;
+                    format!(
+                        "[{}.{:03}] {} ${:.2} ({})",
+                        seconds, millis, ticker, price, volume
+                    )
+                } else {
+                    format!("{} ${:.2} ({})", ticker, price, volume)
                 }
             }
-        }
+            Err(_) => {
+                format!("[Parse Error] {}", data)
+            }
+        },
         _ => data.to_string(),
     }
 }
@@ -238,7 +251,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
     // Проверка: хотя бы один источник тикеров должен быть указан
-    if args.ticker_file.is_none() && args.tickers.is_none() && !std::path::Path::new("tickers.txt").exists() {
+    if args.ticker_file.is_none()
+        && args.tickers.is_none()
+        && !std::path::Path::new("tickers.txt").exists()
+    {
         eprintln!("ERROR: No tickers specified!");
         eprintln!("Use one of:");
         eprintln!("  --tickers AAPL,TSLA,MSFT");
@@ -386,13 +402,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Главный цикл получения котировок
     println!("\nReceiving quotes (each ticker on new line)...");
-    info!("Starting to receive quotes with format: {}", args.output_format);
+    info!(
+        "Starting to receive quotes with format: {}",
+        args.output_format
+    );
     let mut quote_count = 0;
     let mut non_quote_messages = 0;
     let start_time = std::time::Instant::now();
 
     // Для статистики по тикерам
-    let mut ticker_stats: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut ticker_stats: std::collections::HashMap<String, usize> =
+        std::collections::HashMap::new();
     let mut last_stats_time = start_time;
     const STATS_INTERVAL: Duration = Duration::from_secs(5);
 
@@ -405,13 +425,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     'main_loop: while running.load(Ordering::SeqCst) {
         // Проверяем таймер, если установлен
-        if let Some(end) = end_time {
-            if std::time::Instant::now() >= end {
-                println!("\nDuration limit reached, stopping...");
-                info!("Duration limit reached, stopping...");
-                running.store(false, Ordering::SeqCst);
-                break 'main_loop;
-            }
+        if let Some(end) = end_time
+            && std::time::Instant::now() >= end
+        {
+            println!("\nDuration limit reached, stopping...");
+            info!("Duration limit reached, stopping...");
+            running.store(false, Ordering::SeqCst);
+            break 'main_loop;
         }
 
         let mut buf = [0; 4096];
@@ -435,17 +455,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Пытаемся распарсить как JSON
                 match serde_json::from_str::<serde_json::Value>(&message) {
                     Ok(json) => {
-                        if json.get("ticker").is_some() &&
-                           json.get("price").is_some() &&
-                           json.get("volume").is_some() &&
-                           json.get("timestamp").is_some() {
-
+                        if json.get("ticker").is_some()
+                            && json.get("price").is_some()
+                            && json.get("volume").is_some()
+                            && json.get("timestamp").is_some()
+                        {
                             if let Some(ticker_value) = json.get("ticker") {
                                 if let Some(ticker_str) = ticker_value.as_str() {
                                     let ticker_upper = ticker_str.to_uppercase();
                                     if tickers.contains(&ticker_upper) {
                                         // Это валидная котировка для запрошенного тикера
-                                        let formatted = format_quote(&message, &args.output_format, args.show_timestamp);
+                                        let formatted = format_quote(
+                                            &message,
+                                            &args.output_format,
+                                            args.show_timestamp,
+                                        );
                                         println!("{}", formatted);
                                         quote_count += 1;
 
@@ -463,8 +487,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         // Показываем статистику каждые STATS_INTERVAL
                                         let now = std::time::Instant::now();
                                         if now.duration_since(last_stats_time) >= STATS_INTERVAL {
-                                            println!("\n--- Statistics (last {} seconds) ---", STATS_INTERVAL.as_secs());
-                                            let mut stats_vec: Vec<(&String, &usize)> = ticker_stats.iter().collect();
+                                            println!(
+                                                "\n--- Statistics (last {} seconds) ---",
+                                                STATS_INTERVAL.as_secs()
+                                            );
+                                            let mut stats_vec: Vec<(&String, &usize)> =
+                                                ticker_stats.iter().collect();
                                             stats_vec.sort_by(|a, b| b.1.cmp(a.1)); // Сортировка по убыванию
 
                                             for (ticker, count) in stats_vec {
@@ -482,7 +510,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                         non_quote_messages += 1;
                                     }
                                 } else {
-                                    warn!("Invalid ticker format in JSON from {}: {}", addr, message);
+                                    warn!(
+                                        "Invalid ticker format in JSON from {}: {}",
+                                        addr, message
+                                    );
                                     non_quote_messages += 1;
                                 }
                             } else {
@@ -495,13 +526,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                     Err(e) => {
-                        debug!("Received non-JSON message from {}: {} (error: {})", addr, message, e);
+                        debug!(
+                            "Received non-JSON message from {}: {} (error: {})",
+                            addr, message, e
+                        );
                         non_quote_messages += 1;
                     }
                 }
             }
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock
-                       || e.kind() == std::io::ErrorKind::TimedOut => {
+            Err(ref e)
+                if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut =>
+            {
                 // Таймаут - нормально, продолжаем ждать
                 thread::sleep(Duration::from_millis(50));
             }
@@ -550,12 +586,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Average rate: {:.1} quotes/sec", quotes_per_sec);
 
     if non_quote_messages > 0 {
-        let filter_percent = (non_quote_messages as f64 / (quote_count + non_quote_messages) as f64) * 100.0;
-        println!("Filter efficiency: {:.1}% messages filtered", filter_percent);
+        let filter_percent =
+            (non_quote_messages as f64 / (quote_count + non_quote_messages) as f64) * 100.0;
+        println!(
+            "Filter efficiency: {:.1}% messages filtered",
+            filter_percent
+        );
     }
 
     println!("Client stopped successfully!");
 
-    info!("Client shutdown complete. Quotes: {}, Filtered: {}", quote_count, non_quote_messages);
+    info!(
+        "Client shutdown complete. Quotes: {}, Filtered: {}",
+        quote_count, non_quote_messages
+    );
     Ok(())
 }

@@ -1,12 +1,12 @@
-use crate::models::{Command, CommandError, ClientConfig};
 use crate::client_manager::ClientManager;
-use crate::udp_sender::UdpSender;
 use crate::generator::QuoteGenerator;
+use crate::models::{ClientConfig, Command, CommandError};
+use crate::udp_sender::UdpSender;
+use log::{debug, error, info, trace, warn};
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
 use std::thread;
-use std::io::{Read, Write};
-use log::{info, error, warn, debug, trace};
 
 pub struct TcpServer {
     generator: Arc<QuoteGenerator>,
@@ -15,13 +15,11 @@ pub struct TcpServer {
 }
 
 impl TcpServer {
-    pub fn new(
-        generator: QuoteGenerator,
-        ping_timeout_secs: u64,
-        ping_handler_port: u16,
-    ) -> Self {
-        info!("Initializing TCP server with ping timeout: {}s, ping port: {}",
-              ping_timeout_secs, ping_handler_port);
+    pub fn new(generator: QuoteGenerator, ping_timeout_secs: u64, ping_handler_port: u16) -> Self {
+        info!(
+            "Initializing TCP server with ping timeout: {}s, ping port: {}",
+            ping_timeout_secs, ping_handler_port
+        );
 
         let client_manager = Arc::new(ClientManager::new(ping_timeout_secs));
 
@@ -34,7 +32,8 @@ impl TcpServer {
 
     pub fn run(&self, port: u16) -> std::io::Result<()> {
         // Запускаем обработчик ping сообщений
-        self.client_manager.start_ping_handler(self.ping_handler_port);
+        self.client_manager
+            .start_ping_handler(self.ping_handler_port);
 
         let listener = TcpListener::bind(format!("0.0.0.0:{}", port))?;
         info!("TCP server listening on port {}", port);
@@ -111,26 +110,27 @@ impl TcpServer {
             debug!("Command from {}: {}", client_id, input);
 
             match Command::parse(&input) {
-                Ok(command) => {
-                    match self.handle_command(command, &client_id, &mut stream) {
-                        Ok(should_continue) => {
-                            if !should_continue {
-                                info!("Client {} requested stop", client_id);
-                                break;
-                            }
-                        }
-                        Err(e) => {
-                            warn!("Command error for {}: {}", client_id, e);
-                            let error_msg = format!("{}\n", e);
-                            if let Err(e) = stream.write_all(error_msg.as_bytes()) {
-                                error!("Failed to write error to client {}: {}", client_id, e);
-                                break;
-                            }
+                Ok(command) => match self.handle_command(command, &client_id, &mut stream) {
+                    Ok(should_continue) => {
+                        if !should_continue {
+                            info!("Client {} requested stop", client_id);
+                            break;
                         }
                     }
-                }
+                    Err(e) => {
+                        warn!("Command error for {}: {}", client_id, e);
+                        let error_msg = format!("{}\n", e);
+                        if let Err(e) = stream.write_all(error_msg.as_bytes()) {
+                            error!("Failed to write error to client {}: {}", client_id, e);
+                            break;
+                        }
+                    }
+                },
                 Err(e) => {
-                    warn!("Parse error for command '{}' from {}: {}", input, client_id, e);
+                    warn!(
+                        "Parse error for command '{}' from {}: {}",
+                        input, client_id, e
+                    );
                     let error_msg = format!("{}\n", e);
                     if let Err(e) = stream.write_all(error_msg.as_bytes()) {
                         error!("Failed to write error to client {}: {}", client_id, e);
@@ -159,8 +159,12 @@ impl TcpServer {
     ) -> Result<bool, CommandError> {
         match command {
             Command::Stream { udp_addr, tickers } => {
-                info!("Client {} requested stream to {} for tickers: {}",
-                      client_id, udp_addr, tickers.join(", "));
+                info!(
+                    "Client {} requested stream to {} for tickers: {}",
+                    client_id,
+                    udp_addr,
+                    tickers.join(", ")
+                );
 
                 // Проверяем, что все тикеры существуют
                 for ticker in &tickers {
@@ -176,22 +180,22 @@ impl TcpServer {
                 let config = ClientConfig::new(udp_addr.clone(), tickers.clone());
 
                 // Добавляем клиента в менеджер
-                self.client_manager.add_client(client_id.to_string(), config.clone());
+                self.client_manager
+                    .add_client(client_id.to_string(), config.clone());
 
                 // Подписываем клиента на тикеры и получаем ресиверы
                 let receivers = self.generator.subscribe_to_tickers(tickers.clone());
 
                 // Создаем UDP отправитель для этого клиента
-                let udp_sender = UdpSender::new(
-                    client_id.to_string(),
-                    config,
-                    receivers,
-                );
+                let udp_sender = UdpSender::new(client_id.to_string(), config, receivers);
 
                 // Запускаем UDP отправитель
                 udp_sender.start();
 
-                info!("Started UDP streaming for client {} to {}", client_id, udp_addr);
+                info!(
+                    "Started UDP streaming for client {} to {}",
+                    client_id, udp_addr
+                );
 
                 stream.write_all(b"STREAMING_STARTED\n")?;
 

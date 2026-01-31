@@ -1,11 +1,11 @@
 use crate::models::StockQuote;
+use crossbeam_channel::{Receiver, Sender, unbounded};
+use log::{debug, info, trace, warn};
 use rand::Rng;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use crossbeam_channel::{Sender, Receiver, unbounded};
-use log::{info, debug, trace, warn};
 
 #[derive(Clone)]
 pub struct QuoteGenerator {
@@ -40,7 +40,10 @@ impl QuoteGenerator {
             base_volumes.insert(ticker_upper, base_volume);
         }
 
-        debug!("Initialized quote generator with {} tickers", ticker_prices.len());
+        debug!(
+            "Initialized quote generator with {} tickers",
+            ticker_prices.len()
+        );
 
         QuoteGenerator {
             ticker_prices: Arc::new(Mutex::new(ticker_prices)),
@@ -67,7 +70,10 @@ impl QuoteGenerator {
                     receivers.push(rx);
                     debug!("Client subscribed to ticker: {}", ticker_upper);
                 } else {
-                    warn!("Client tried to subscribe to non-existent ticker: {}", ticker_upper);
+                    warn!(
+                        "Client tried to subscribe to non-existent ticker: {}",
+                        ticker_upper
+                    );
                 }
             }
         }
@@ -83,8 +89,11 @@ impl QuoteGenerator {
             let ticker_upper = ticker.to_uppercase();
 
             if let Some(sender_list) = ticker_senders.get(&ticker_upper) {
-                debug!("Cleaning up subscriptions for ticker: {} ({} senders)",
-                      ticker_upper, sender_list.len());
+                debug!(
+                    "Cleaning up subscriptions for ticker: {} ({} senders)",
+                    ticker_upper,
+                    sender_list.len()
+                );
             }
         }
     }
@@ -100,7 +109,10 @@ impl QuoteGenerator {
             };
 
             let mut iteration = 0;
-            info!("Quote generator thread started for {} tickers", tickers.len());
+            info!(
+                "Quote generator thread started for {} tickers",
+                tickers.len()
+            );
 
             loop {
                 iteration += 1;
@@ -152,8 +164,13 @@ impl QuoteGenerator {
                                 }
                             });
 
-                            trace!("Generated quote for {}: price={:.2}, volume={} (sent to {} clients)",
-                                  ticker, price, volume, senders.len());
+                            trace!(
+                                "Generated quote for {}: price={:.2}, volume={} (sent to {} clients)",
+                                ticker,
+                                price,
+                                volume,
+                                senders.len()
+                            );
                         }
                     }
                 }
@@ -171,8 +188,10 @@ impl QuoteGenerator {
                         }
                     }
 
-                    info!("Completed {} cycles, {} active tickers, total active clients: {}",
-                          iteration, active_tickers, total_clients);
+                    info!(
+                        "Completed {} cycles, {} active tickers, total active clients: {}",
+                        iteration, active_tickers, total_clients
+                    );
                 }
 
                 thread::sleep(Duration::from_millis(interval_ms));

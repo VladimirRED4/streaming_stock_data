@@ -1,7 +1,7 @@
-use quote_common::{QuoteGenerator, TcpServer};
 use clap::Parser;
-use std::time::Duration;
 use log::{error, info};
+use quote_common::{QuoteGenerator, TcpServer};
+use std::time::Duration;
 
 // Константы для конфигурации
 const DEFAULT_PORT: u16 = 8080;
@@ -50,8 +50,7 @@ fn setup_logging(level: &str, color: bool) {
     use env_logger::Env;
 
     // Создаем специальное окружение с нужным уровнем логирования
-    let env = Env::default()
-        .filter_or("RUST_LOG", format!("quote_system={}", level));
+    let env = Env::default().filter_or("RUST_LOG", format!("quote_system={}", level));
 
     let mut builder = env_logger::Builder::from_env(env);
 
@@ -106,15 +105,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Запуск генератора котировок
     generator.clone().start(args.interval_ms);
-    info!("Quote generator started with interval {}ms", args.interval_ms);
+    info!(
+        "Quote generator started with interval {}ms",
+        args.interval_ms
+    );
 
     // Создание TCP сервера
     info!("Initializing TCP server...");
-    let tcp_server = TcpServer::new(
-        generator,
-        args.ping_timeout,
-        args.ping_port,
-    );
+    let tcp_server = TcpServer::new(generator, args.ping_timeout, args.ping_port);
 
     // Запуск TCP сервера
     println!("Starting TCP server on port {}...", args.port);

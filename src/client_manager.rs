@@ -1,10 +1,10 @@
 use crate::models::ClientConfig;
+use log::{debug, error, info, trace, warn};
 use std::collections::HashMap;
+use std::net::UdpSocket;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use std::net::UdpSocket;
-use log::{info, error, warn, debug, trace};
 
 pub struct ClientManager {
     clients: Arc<Mutex<HashMap<String, ClientConfig>>>,
@@ -13,7 +13,10 @@ pub struct ClientManager {
 
 impl ClientManager {
     pub fn new(ping_timeout_secs: u64) -> Self {
-        info!("Initializing client manager with ping timeout: {}s", ping_timeout_secs);
+        info!(
+            "Initializing client manager with ping timeout: {}s",
+            ping_timeout_secs
+        );
         ClientManager {
             clients: Arc::new(Mutex::new(HashMap::new())),
             ping_timeout_secs,
@@ -22,19 +25,31 @@ impl ClientManager {
 
     // Добавление нового клиента
     pub fn add_client(&self, client_id: String, config: ClientConfig) {
-        info!("Adding new client: {} -> UDP: {}, Tickers: {}",
-              client_id, config.udp_addr, config.tickers.join(", "));
+        info!(
+            "Adding new client: {} -> UDP: {}, Tickers: {}",
+            client_id,
+            config.udp_addr,
+            config.tickers.join(", ")
+        );
         let mut clients = self.clients.lock().unwrap();
         let old_count = clients.len();
         clients.insert(client_id, config);
-        info!("Client added. Total clients: {} (was: {})", clients.len(), old_count);
+        info!(
+            "Client added. Total clients: {} (was: {})",
+            clients.len(),
+            old_count
+        );
     }
 
     // Удаление клиента
     pub fn remove_client(&self, client_id: &str) -> Option<ClientConfig> {
         let mut clients = self.clients.lock().unwrap();
         if let Some(config) = clients.remove(client_id) {
-            info!("Removed client: {}. Active clients: {}", client_id, clients.len());
+            info!(
+                "Removed client: {}. Active clients: {}",
+                client_id,
+                clients.len()
+            );
             Some(config)
         } else {
             warn!("Attempted to remove non-existent client: {}", client_id);
@@ -115,7 +130,10 @@ impl ClientManager {
                                         if let Err(e) = udp_socket.send_to(b"PONG", addr) {
                                             error!("Failed to send PONG to {}: {}", addr, e);
                                         }
-                                        debug!("Matched PING from {} to existing client {}", addr, id);
+                                        debug!(
+                                            "Matched PING from {} to existing client {}",
+                                            addr, id
+                                        );
                                         found = true;
                                         break;
                                     }
@@ -139,23 +157,31 @@ impl ClientManager {
                 }
 
                 // Периодически проверяем устаревших клиентов
-                if stats_cycles % 10 == 0 { // Каждую секунду (10 * 100ms)
+                if stats_cycles % 10 == 0 {
+                    // Каждую секунду (10 * 100ms)
                     let stale_clients: Vec<String> = {
                         let clients_lock = clients.lock().unwrap();
-                        clients_lock.iter()
+                        clients_lock
+                            .iter()
                             .filter(|(_, config)| config.is_stale(ping_timeout))
                             .map(|(id, _)| id.clone())
                             .collect()
                     };
 
                     if !stale_clients.is_empty() {
-                        warn!("Found {} stale clients: {:?}", stale_clients.len(), stale_clients);
+                        warn!(
+                            "Found {} stale clients: {:?}",
+                            stale_clients.len(),
+                            stale_clients
+                        );
 
                         let mut clients_lock = clients.lock().unwrap();
                         for client_id in stale_clients {
                             if let Some(config) = clients_lock.remove(&client_id) {
-                                warn!("Removed stale client: {} (UDP: {})",
-                                      client_id, config.udp_addr);
+                                warn!(
+                                    "Removed stale client: {} (UDP: {})",
+                                    client_id, config.udp_addr
+                                );
                             }
                         }
                         info!("Active clients after cleanup: {}", clients_lock.len());
