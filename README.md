@@ -33,13 +33,6 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/vladimirred4/streaming_stock_data/pulls)
 [![GitHub contributors](https://img.shields.io/github/contributors/vladimirred4/streaming_stock_data)](https://github.com/vladimirred4/streaming_stock_data/graphs/contributors)
 
-## 🏆 Code Quality
-
-[![CodeFactor](https://www.codefactor.io/repository/github/vladimirred4/streaming_stock_data/badge)](https://www.codefactor.io/repository/github/vladimirred4/streaming_stock_data)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vladimirred4_streaming_stock_data&metric=bugs)](https://sonarcloud.io/summary/new_code?id=vladimirred4_streaming_stock_data)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vladimirred4_streaming_stock_data&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=vladimirred4_streaming_stock_data)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vladimirred4_streaming_stock_data&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=vladimirred4_streaming_stock_data)
-
 ## Реализация системы потоковой передачи биржевых котировок на Rust
 
 ## Архитектура
