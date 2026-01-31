@@ -1,6 +1,48 @@
-# Quote Streaming System
+# Quote Streaming
+
+[![CI](https://github.com/vladimirred4/streaming_stock_data/actions/workflows/ci.yml/badge.svg)](https://github.com/vladimirred4/streaming_stock_data/actions)
+[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code Coverage](https://codecov.io/gh/vladimirred4/streaming_stock_data/branch/main/graph/badge.svg)](https://codecov.io/gh/vladimirred4/streaming_stock_data)
+[![Security Audit](https://img.shields.io/badge/security-audited-brightgreen)](https://github.com/vladimirred4/streaming_stock_data/security)
+[![Maintenance](https://img.shields.io/badge/maintenance-actively--developed-brightgreen.svg)](https://github.com/vladimirred4/streaming_stock_data)
+[![Discord](https://img.shields.io/discord/your-discord-channel?logo=discord)](https://discord.gg/your-invite-link)
 
 Реализация системы потоковой передачи биржевых котировок на Rust.
+
+## 🚀 Особенности
+
+| Feature | Status | Description |
+| --------- | -------- | ------------- |
+| TCP сервер | ✅ Работает | Управление подключениями |
+| UDP стриминг | ✅ Работает | Потоковая передача данных |
+| Многопоточность | ✅ Работает | Поддержка множества клиентов |
+| Фильтрация | ✅ Работает | Клиенты получают только свои тикеры |
+| Ping/Pong | ✅ Работает | Keep-alive механизм |
+| Логирование | ✅ Работает | Структурированные логи |
+| Конфигурация | ✅ Работает | Аргументы командной строки |
+
+## 📊 Статистика проекта
+
+![Lines of code](https://img.shields.io/tokei/lines/github/vladimirred4/streaming_stock_data)
+![GitHub repo size](https://img.shields.io/github/repo-size/vladimirred4/streaming_stock_data)
+![GitHub last commit](https://img.shields.io/github/last-commit/vladimirred4/streaming_stock_data)
+![GitHub issues](https://img.shields.io/github/issues/vladimirred4/streaming_stock_data)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/vladimirred4/streaming_stock_data)
+
+## 🤝 Contributing
+
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/vladimirred4/streaming_stock_data/pulls)
+[![GitHub contributors](https://img.shields.io/github/contributors/vladimirred4/streaming_stock_data)](https://github.com/vladimirred4/streaming_stock_data/graphs/contributors)
+
+## 🏆 Code Quality
+
+[![CodeFactor](https://www.codefactor.io/repository/github/vladimirred4/streaming_stock_data/badge)](https://www.codefactor.io/repository/github/vladimirred4/streaming_stock_data)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=vladimirred4_streaming_stock_data&metric=bugs)](https://sonarcloud.io/summary/new_code?id=vladimirred4_streaming_stock_data)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=vladimirred4_streaming_stock_data&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=vladimirred4_streaming_stock_data)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=vladimirred4_streaming_stock_data&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=vladimirred4_streaming_stock_data)
+
+## Реализация системы потоковой передачи биржевых котировок на Rust
 
 ## Архитектура
 
@@ -163,7 +205,7 @@ cargo run --bin quote-client -- \
 ### Структура проекта
 
 ```text
-quote-system/
+streaming_stock_data/
 ├── Cargo.toml
 ├── README.md
 ├── tickers.txt                    # Файл с тикерами по умолчанию
