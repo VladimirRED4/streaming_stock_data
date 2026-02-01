@@ -22,7 +22,6 @@
 
 ## 📊 Статистика проекта
 
-![Lines of code](https://img.shields.io/tokei/lines/github/vladimirred4/streaming_stock_data)
 ![GitHub repo size](https://img.shields.io/github/repo-size/vladimirred4/streaming_stock_data)
 ![GitHub last commit](https://img.shields.io/github/last-commit/vladimirred4/streaming_stock_data)
 ![GitHub issues](https://img.shields.io/github/issues/vladimirred4/streaming_stock_data)
